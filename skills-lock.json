@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "skills": {
+    "feature-clarify": {
+      "source": "thr3a/Skills",
+      "sourceType": "github",
+      "skillPath": "skills/feature-clarify/SKILL.md",
+      "computedHash": "c3dbcc2469810b86d774880fbeeb16a4626a2894c517e5e5f3f6f08519919d8c"
+    },
+    "mantine-colors": {
+      "source": "thr3a/Skills",
+      "sourceType": "github",
+      "skillPath": "skills/mantine-colors/SKILL.md",
+      "computedHash": "34c541bbdecbece8e1aa5a4241718277fe8fc4ae20a25af37d14a2ab453378e1"
+    },
+    "mantine-style-props": {
+      "source": "thr3a/Skills",
+      "sourceType": "github",
+      "skillPath": "skills/mantine-style-props/SKILL.md",
+      "computedHash": "653ec34fb6c5d92f990d4b0e192159f8c176b0b455745154773963768ef0472e"
+    },
+    "playwright-cli": {
+      "source": "microsoft/playwright-cli",
+      "sourceType": "github",
+      "skillPath": "skills/playwright-cli/SKILL.md",
+      "computedHash": "d2ea99c86b1c7c4a2800f7f1594c20b46da237a9f4fe199f6dd93d89b27faaf0"
+    }
+  }
+}
