@@ -5,131 +5,214 @@ export type FishSpecies = {
   rows: string[];
   palette: Record<string, string>;
   tailCols: number;
+  // ドット密度の補正係数(高解像度ドット絵を従来と同じ画面サイズで表示するための倍率)
+  pixelScale: number;
 };
 
 // クマノミ(オレンジに白帯)
 const clownfish: FishSpecies = {
   name: 'clownfish',
   rows: [
-    '......KKKK......',
-    '....KOOWWOK.....',
-    '...KOOWWWOOK.O..',
-    '..KOEOWWWOOOKOO.',
-    '.KOOOOWWWOOWKOOO',
-    '..KOEOWWWOOOKOO.',
-    '...KOOWWWOOK.O..',
-    '....KOOWWOK.....',
-    '......KKKK......'
+    '..........KOOOOK................',
+    '.........KoooooK................',
+    '......KKKWWWKooKKK..........KK..',
+    '....KKooKWWWKOOKWWKK.......KOOK.',
+    '...KWEOOKWWWKOOKWWWKK.....KOOOOK',
+    '..KOEEOOKWWWKOOKWWWKOK....KOOOOK',
+    '.KOOOOOOKWWWKOOKWWWKOOKKKKOOOOK.',
+    'KoOOOOOOKWWWKOOKWWWKOOKWWKOOOK..',
+    'KOOOOOOOKWWWKOOKWWWKOOKWWKOOOK..',
+    '.KddddddKwwwKddKwwwKddKKKKddddK.',
+    '..KdddddKwwwKddKwwwKdK....KddddK',
+    '...KddddKwwwKddKwwwKK.....KddddK',
+    '....KKddKwwwKddKwwKK.......KddK.',
+    '......KKKwwwKddKKK..........KK..',
+    '.........KKKKKK.................',
+    '..........KdK...................'
   ],
   palette: {
-    O: '#f97f2a',
+    O: '#f4772b',
+    o: '#ffa14f',
+    d: '#d35f1c',
     W: '#ffffff',
-    K: '#2b2118',
-    E: '#1a1a1a'
+    w: '#cfdde4',
+    K: '#26190e',
+    E: '#141414'
   },
-  tailCols: 3
+  tailCols: 7,
+  pixelScale: 0.5
 };
 
-// ナンヨウハギ(青い体に黄色い尾)
+// ナンヨウハギ(青い体に黒の模様と黄色い尾)
 const blueTang: FishSpecies = {
   name: 'blueTang',
   rows: [
-    '.....NNNNNN.....',
-    '...NBBBBBBBN....',
-    '..NBEBBBNNBBN.Y.',
-    '.NBBBBBBBNNBNYY.',
-    '.NBBBBBBBBNNNYYY',
-    '.NBBBBBBBNNBNYY.',
-    '..NBEBBBNNBBN.Y.',
-    '...NBBBBBBBN....',
-    '.....NNNNNN.....'
+    '.........KnnnnnnnnK.............',
+    '.........KnnnnnnnK..............',
+    '.......KKKbbbbbbbKK..........KK.',
+    '.....KKbbBBBBBBBBBBKK......KKYYK',
+    '....KEEBBBMMMMMMMMMBBK....KYYYYK',
+    '...KBEEBBBMMMMMMMMMBBBK..KYYYYYK',
+    '..KBBBBBBBBBBBBBMMMMMMMKKYYYYYYK',
+    '.KBBBBBBBBBBBBBBBBMMMMMMKYYYYYYK',
+    '.KBBBBBBBBBBBBBBBBBBMMMMKYYYYYYK',
+    '..KBBBBBBBBBBBBBBBBBBBBKKYYYYYYK',
+    '...KnnnnnnnnnnnnnnnnnnK..KYYYYYK',
+    '....KnnnnnnnnnnnnnnnnK....KyyyyK',
+    '.....KKnnnnnnnnnnnnKK......KKyy.',
+    '.......KKKnnnnnnnKK..........KK.',
+    '..........KMMMMMK...............',
+    '...........KMMK.................'
   ],
   palette: {
-    B: '#2a7fe8',
-    N: '#143a8c',
+    B: '#2f7fe6',
+    b: '#5fa8f0',
+    n: '#1d4fae',
+    M: '#10142e',
     Y: '#ffd23a',
-    E: '#0d0d20'
+    y: '#c79f17',
+    K: '#0a1026',
+    E: '#05060f'
   },
-  tailCols: 3
+  tailCols: 7,
+  pixelScale: 0.5
 };
 
-// キイロハギ風(縦に大きいひし形)
+// キイロハギ(縦に大きいひし形)
 const yellowAngel: FishSpecies = {
   name: 'yellowAngel',
   rows: [
-    '......Y.....',
-    '.....YYY..Y.',
-    '....YYYYY.YY',
-    '..DYYYYYYYYY',
-    '.YEYYYYYDYYY',
-    '.YYYYYYYYDYY',
-    '..DYYYYYYYYY',
-    '....YYYYY.YY',
-    '.....YYY..Y.',
-    '......Y.....'
+    '.........KKKKKK...........',
+    '........KyyyyyyK..........',
+    '.......KyyyyyyyyK.........',
+    '......KyyYYYYYYYyK........',
+    '.....KyyYYYYYYYYYyK.......',
+    '.....KYYYYYYYYYYYYK.......',
+    '....KYWEYYYYYYYYYYYK......',
+    '...KYYEEYYYYYYYYYYYK.KKKK.',
+    '..KYYYYYYYYYYYYYYYYK.KYYYK',
+    '.KYYYYYYYYYYYYYYYYYWYYYYYK',
+    '.KYYYYYYYYYYYYYYYYYWYYYYYK',
+    '...KYYYYYYYYYYYYYYYK.KDDDK',
+    '....KYYYYYYYYYYYYYYK.KKKK.',
+    '.....KDDDDDDDDDDDDDK......',
+    '......KDDDDDDDDDDDK.......',
+    '.......KDDDDDDDDDK........',
+    '........KDDDDDDDK.........',
+    '.........KDDDDDK..........',
+    '..........KDDDK...........',
+    '...........KKK............'
   ],
   palette: {
     Y: '#ffd91f',
-    D: '#c79a00',
-    E: '#1a1a1a'
+    y: '#ffec6e',
+    D: '#d9a800',
+    W: '#f4f4f4',
+    K: '#5b4300',
+    E: '#141414'
   },
-  tailCols: 2
+  tailCols: 6,
+  pixelScale: 0.5
 };
 
-// ネオンテトラ(小さくて青と赤のライン)
+// ネオンテトラ(細身で青と赤のライン)
 const neonTetra: FishSpecies = {
   name: 'neonTetra',
-  rows: ['....SSSS....', '..CCCCCCCS..', '.SECCCCCCCSS', '.SRRRRRRRSS.', '..SRRRRRS.S.', '....SSS.....'],
+  rows: [
+    '............KFFK............',
+    '............KFFK............',
+    '......KKKKKKKKKK........KK..',
+    '....KKSSSSSSSSSSKK.....KFFF.',
+    '..KKEECCCCCCCCCCCCK...KFFFF.',
+    '.KSSEECCCCCCCCCCCCcSKKFFFFF.',
+    'KSSSSSSSSSSSRRRRRRRRRRFFFFF.',
+    '.KssssssssssRRRRRRRRrKFFFFF.',
+    '..KKssssssssrrrrrrrKK.KFFFF.',
+    '....KKKsssssssssKKK....KFFK.',
+    '.......KKKKKKKKK........KK..',
+    '..........KFFK..............'
+  ],
   palette: {
-    C: '#3fd9e8',
+    C: '#35e0f0',
+    c: '#1fa8c8',
     R: '#e8413a',
-    S: '#cfd8dc',
-    E: '#10202a'
+    r: '#b02a26',
+    S: '#cfdce2',
+    s: '#93a8b0',
+    F: '#bcd8e0',
+    K: '#16242c',
+    E: '#0a141c'
   },
-  tailCols: 2
+  tailCols: 6,
+  pixelScale: 0.5
 };
 
-// ベタ(紫の体に大きなマゼンタの尾)
+// ベタ(紫の体に大きく流れるマゼンタのひれ)
 const betta: FishSpecies = {
   name: 'betta',
   rows: [
-    '......PPP..M....',
-    '....PPPPPP.MMM..',
-    '...PEPPPPPMMMMM.',
-    '..PPPPPPPPMMMMMM',
-    '..PPPPPPPPMMMMMM',
-    '...PPPPPPPMMMMM.',
-    '....PPPPPP.MMM..',
-    '......PPP..M....'
+    '.......KMMK.......................',
+    '......KMmMMK..........KMMMMK......',
+    '.....KMmMMMMK.......KMMMMMMMMK....',
+    '....KMmMMMMMK......KMmMMMMMMMMK...',
+    '...KKKKKKKKKKK....KMmMMMMMMMMMMK..',
+    '..KpPPPPPPPPPK...KMMmMMMMRMMMMMK..',
+    '.KpPEPPPPPPPPK..KMmMMMRMMMMMMMMK..',
+    'KpPPEPPPPPPPPPPMMmMMRMMMMMMMMMMK..',
+    'KPPPPPPPPPPPPPPPMmMMRMMMMMMMMMMMK.',
+    'KVPPPPPPPPPPPPPVMmMMRMMMMMMMMMMMK.',
+    '.KVVPPPPPPPPPVKMMmMMRMMMMMMMMMK...',
+    '..KKVVVVVVVVVK..KMmMMRMMMMMMK.....',
+    '....KKKKKKKKK....KMmMRMMMMMK......',
+    '.....KMMMMMMK.....KMmMMMMMK.......',
+    '......KMMMMK........KMMMMK........',
+    '.......KMMK.........KKKK..........',
+    '........KMK.......................'
   ],
   palette: {
-    P: '#7a4fd0',
+    P: '#8054d8',
+    p: '#a57ce8',
+    V: '#5c3aa8',
     M: '#e056b8',
-    E: '#1a1030'
+    m: '#f08ad0',
+    R: '#b03090',
+    K: '#1d1133',
+    E: '#0d081f'
   },
-  tailCols: 4
+  tailCols: 19,
+  pixelScale: 0.5
 };
 
 // 紅白の錦鯉風(白地に赤い模様)
 const koi: FishSpecies = {
   name: 'koi',
   rows: [
-    '......RRRR......',
-    '....RWWWWRR.....',
-    '...WWRWWWWWW.R..',
-    '..GWWWWRRWWWRRR.',
-    '.WWEWWWWWWWWWRRR',
-    '..GWWWWRRWWWRRR.',
-    '...WWRWWWWWW.R..',
-    '....RWWWWRR.....'
+    '...........KwwwwK.................',
+    '..........KwwwwwwK................',
+    '.......KKKKKKKKKKKK..........KK...',
+    '.....KKWWRRRRWWWRRRRK.......KWWK..',
+    '....KEWRRRRRRWWRRRRRWKK....KWWWK..',
+    '...KWEWRRRRRWWWWRRRRWWWWKKKWWWWK..',
+    '..KWWWRRRRWWWWWWRRRWWWWWWKWWWW....',
+    'KKWWWWRRRWWWWWWWWWWWWWWWWWKWWW....',
+    'KKwWWWWWWWWWWWWWWWWWWWWWWwKWWW....',
+    '.KwwwwwwwwwwwwwwwwwwwwwwwKKWWW....',
+    '..KwwwwwwwwwwwwwwwwwwwwKK.KWWWK...',
+    '...KwwwwwwwwwwwwwwwwwwK....KWWWK..',
+    '....KKwwwwwwwwwwwwwwKK......KWWK..',
+    '......KKKKKKKKKKKKKK.........KK...',
+    '.........KwwK.....................'
   ],
   palette: {
-    W: '#f8f4ec',
+    W: '#faf6ee',
+    w: '#ddd5c5',
     R: '#e23d2e',
-    G: '#c9c2b4',
-    E: '#1a1a1a'
+    r: '#b52a1e',
+    K: '#2a2020',
+    E: '#141414'
   },
-  tailCols: 3
+  tailCols: 8,
+  pixelScale: 0.5
 };
 
 export const fishSpeciesList: FishSpecies[] = [clownfish, blueTang, yellowAngel, neonTetra, betta, koi];
