@@ -45,6 +45,7 @@ type FishState = {
   retargetTimer: number;
   fleeTimer: number;
   wigglePhase: number;
+  facingRight: boolean;
 };
 
 type BubbleState = {
@@ -463,6 +464,7 @@ export const createAquarium = async (container: HTMLElement): Promise<() => void
       if (!frames) continue;
       const sprite = new Sprite(frames[0]);
       sprite.anchor.set(0.5);
+      const initialVx = Math.random() < 0.5 ? -p.speed : p.speed;
       const fish: FishState = {
         sprite,
         frames,
@@ -470,7 +472,7 @@ export const createAquarium = async (container: HTMLElement): Promise<() => void
         frameTimer: 0,
         x: randomBetween(80, app.screen.width - 80),
         y: clampFishY(randomBetween(depthToY(p.depthMin), depthToY(p.depthMax))),
-        vx: randomBetween(-1, 1) < 0 ? -p.speed : p.speed,
+        vx: initialVx,
         vy: 0,
         baseSpeed: p.speed,
         scale: p.scale,
@@ -485,7 +487,8 @@ export const createAquarium = async (container: HTMLElement): Promise<() => void
         targetY: 0,
         retargetTimer: 0,
         fleeTimer: 0,
-        wigglePhase: Math.random() * Math.PI * 2
+        wigglePhase: Math.random() * Math.PI * 2,
+        facingRight: initialVx > 0
       };
       pickWanderTarget(fish);
       fishLayer.addChild(sprite);
@@ -563,7 +566,9 @@ export const createAquarium = async (container: HTMLElement): Promise<() => void
   const updateFish = (fish: FishState, dt: number): void => {
     if (fish.mode === 'flee') {
       fish.fleeTimer -= dt;
-      if (fish.fleeTimer <= 0) {
+      // 壁や水面際で逃げ場がなくなったら、その場で粘らず通常遊泳に戻す
+      const fleeArrived = Math.hypot(fish.targetX - fish.x, fish.targetY - fish.y) < 30;
+      if (fish.fleeTimer <= 0 || fleeArrived) {
         fish.mode = 'wander';
         pickWanderTarget(fish);
       }
@@ -599,10 +604,12 @@ export const createAquarium = async (container: HTMLElement): Promise<() => void
     }
 
     const speedMul = fish.mode === 'flee' ? 2.4 : fish.mode === 'seek' ? 1.5 : 1;
-    const speed = fish.baseSpeed * speedMul;
     const dx = fish.targetX - fish.x;
     const dy = fish.targetY - fish.y;
     const dist = Math.max(Math.hypot(dx, dy), 1);
+    // 目標の手前で減速し、通り過ぎて反転を繰り返す振動を防ぐ
+    const arriveMul = clamp(dist / 70, 0.25, 1);
+    const speed = fish.baseSpeed * speedMul * arriveMul;
     const desiredVx = (dx / dist) * speed;
     const desiredVy = (dy / dist) * speed;
     const turn = clamp(fish.turnRate * (fish.mode === 'flee' ? 2 : 1) * dt, 0, 1);
@@ -624,13 +631,19 @@ export const createAquarium = async (container: HTMLElement): Promise<() => void
     }
 
     fish.wigglePhase += dt * 2;
-    const facingRight = fish.vx > 0;
+    // 向きはしっかり泳ぎ出したときだけ反転させる(微小な揺れでのパタパタ防止)
+    const flipThreshold = fish.baseSpeed * 0.2;
+    if (fish.facingRight && fish.vx < -flipThreshold) fish.facingRight = false;
+    if (!fish.facingRight && fish.vx > flipThreshold) fish.facingRight = true;
+    const facingRight = fish.facingRight;
     const spriteScale = SCALE * fish.scale * fish.pixelScale;
     fish.sprite.scale.set(facingRight ? -spriteScale : spriteScale, spriteScale);
     fish.sprite.x = fish.x;
     fish.sprite.y = fish.y + Math.sin(fish.wigglePhase) * 2;
     const tilt = clamp(Math.atan2(fish.vy, Math.abs(fish.vx) + 20) * 0.6, -0.45, 0.45);
-    fish.sprite.rotation = facingRight ? tilt : -tilt;
+    // 体の傾きも一瞬で変えず滑らかに追従させる
+    const targetRotation = facingRight ? tilt : -tilt;
+    fish.sprite.rotation += (targetRotation - fish.sprite.rotation) * clamp(dt * 8, 0, 1);
   };
 
   const drawSurface = (): void => {
