@@ -362,6 +362,86 @@ export const createAquarium = async (container: HTMLElement): Promise<() => void
       shyness: 0.9,
       appetite: 300,
       turnRate: 1.6
+    },
+    {
+      species: fishSpeciesList[6],
+      scale: 1.7,
+      speed: 50,
+      depthMin: 0.2,
+      depthMax: 0.6,
+      shyness: 0.9,
+      appetite: 280,
+      turnRate: 1.8
+    },
+    {
+      species: fishSpeciesList[7],
+      scale: 1.8,
+      speed: 45,
+      depthMin: 0.35,
+      depthMax: 0.75,
+      shyness: 0.6,
+      appetite: 250,
+      turnRate: 1.4
+    },
+    {
+      species: fishSpeciesList[8],
+      scale: 1.7,
+      speed: 55,
+      depthMin: 0.15,
+      depthMax: 0.55,
+      shyness: 1.1,
+      appetite: 290,
+      turnRate: 2
+    },
+    {
+      species: fishSpeciesList[9],
+      scale: 1.6,
+      speed: 50,
+      depthMin: 0.25,
+      depthMax: 0.65,
+      shyness: 0.8,
+      appetite: 270,
+      turnRate: 1.6
+    },
+    {
+      species: fishSpeciesList[10],
+      scale: 1.1,
+      speed: 95,
+      depthMin: 0.1,
+      depthMax: 0.4,
+      shyness: 1.4,
+      appetite: 340,
+      turnRate: 3
+    },
+    {
+      species: fishSpeciesList[11],
+      scale: 1.3,
+      speed: 80,
+      depthMin: 0.2,
+      depthMax: 0.5,
+      shyness: 1.3,
+      appetite: 320,
+      turnRate: 2.6
+    },
+    {
+      species: fishSpeciesList[12],
+      scale: 1.3,
+      speed: 100,
+      depthMin: 0.15,
+      depthMax: 0.45,
+      shyness: 1.5,
+      appetite: 350,
+      turnRate: 3
+    },
+    {
+      species: fishSpeciesList[13],
+      scale: 1.4,
+      speed: 65,
+      depthMin: 0.55,
+      depthMax: 0.85,
+      shyness: 1,
+      appetite: 300,
+      turnRate: 2
     }
   ];
 
