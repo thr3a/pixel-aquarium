@@ -27,10 +27,12 @@
   "devDependencies": {
     "@biomejs/biome": "^2.4.11",
     "@types/node": "^25.9.3",
+    "@types/pngjs": "^6.0.5",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vanilla-extract/vite-plugin": "^5.2.2",
     "@vitejs/plugin-react": "^6.0.1",
+    "pngjs": "^7.0.0",
     "postcss": "^8.5.9",
     "postcss-preset-mantine": "1.18.0",
     "postcss-simple-vars": "^7.0.1",
