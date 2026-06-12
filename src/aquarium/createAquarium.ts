@@ -33,6 +33,7 @@ type FishState = {
   vy: number;
   baseSpeed: number;
   scale: number;
+  pixelScale: number;
   depthMin: number;
   depthMax: number;
   shyness: number;
@@ -141,7 +142,7 @@ export const createAquarium = async (container: HTMLElement): Promise<() => void
   for (const species of fishSpeciesList) {
     fishTextures.set(species.name, [
       createPixelTexture(species.rows, species.palette),
-      createPixelTexture(makeTailFlapRows(species.rows, species.tailCols), species.palette)
+      createPixelTexture(makeTailFlapRows(species.rows, species.tailCols, 2), species.palette)
     ]);
   }
 
@@ -393,6 +394,7 @@ export const createAquarium = async (container: HTMLElement): Promise<() => void
         vy: 0,
         baseSpeed: p.speed,
         scale: p.scale,
+        pixelScale: p.species.pixelScale,
         depthMin: p.depthMin,
         depthMax: p.depthMax,
         shyness: p.shyness,
@@ -543,7 +545,7 @@ export const createAquarium = async (container: HTMLElement): Promise<() => void
 
     fish.wigglePhase += dt * 2;
     const facingRight = fish.vx > 0;
-    const spriteScale = SCALE * fish.scale;
+    const spriteScale = SCALE * fish.scale * fish.pixelScale;
     fish.sprite.scale.set(facingRight ? -spriteScale : spriteScale, spriteScale);
     fish.sprite.x = fish.x;
     fish.sprite.y = fish.y + Math.sin(fish.wigglePhase) * 2;

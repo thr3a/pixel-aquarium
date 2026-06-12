@@ -26,7 +26,8 @@ export const createPixelTexture = (rows: string[], palette: Record<string, strin
 };
 
 // 尾びれ部分(右端 tailCols 列)を 1px 下にずらした「尾を振った」フレームを作る
-export const makeTailFlapRows = (rows: string[], tailCols: number): string[] => {
+// 高解像度ドット絵では shift を増やして振り幅を保つ
+export const makeTailFlapRows = (rows: string[], tailCols: number, shift = 1): string[] => {
   const height = rows.length;
   const width = Math.max(...rows.map((row) => row.length));
   const grid = rows.map((row) => {
@@ -35,10 +36,12 @@ export const makeTailFlapRows = (rows: string[], tailCols: number): string[] => 
   });
 
   for (let x = width - tailCols; x < width; x++) {
-    for (let y = height - 1; y >= 1; y--) {
-      grid[y][x] = grid[y - 1][x];
+    for (let y = height - 1; y >= shift; y--) {
+      grid[y][x] = grid[y - shift][x];
     }
-    grid[0][x] = '.';
+    for (let y = 0; y < shift; y++) {
+      grid[y][x] = '.';
+    }
   }
 
   return grid.map((row) => row.join(''));
