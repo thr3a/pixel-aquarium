@@ -23,7 +23,12 @@ const SURFACE_RATIO = 0.1;
 // 砂地の上端位置
 const SAND_RATIO = 0.84;
 
+// 魚の行動モード(通常遊泳・逃避・餌への接近)
+export type FishMode = 'wander' | 'flee' | 'seek';
+
 type FishState = {
+  // テストでスナップショット間の個体追跡に使う通し番号
+  id: number;
   sprite: Sprite;
   speciesName: string;
   frames: [Texture, Texture];
@@ -41,7 +46,7 @@ type FishState = {
   shyness: number;
   appetite: number;
   turnRate: number;
-  mode: 'wander' | 'flee' | 'seek';
+  mode: FishMode;
   targetX: number;
   targetY: number;
   retargetTimer: number;
@@ -51,6 +56,8 @@ type FishState = {
 };
 
 type BubbleState = {
+  // テストでスナップショット間の追跡に使う通し番号
+  id: number;
   sprite: Sprite;
   baseX: number;
   y: number;
@@ -59,6 +66,8 @@ type BubbleState = {
 };
 
 type FoodState = {
+  // テストでスナップショット間の追跡に使う通し番号
+  id: number;
   sprite: Sprite;
   x: number;
   y: number;
@@ -89,9 +98,40 @@ type RayState = {
   phase: number;
 };
 
+// テストから内部状態を数値で観測するためのスナップショット(描画オブジェクトは含めない)
+export type AquariumDebugState = {
+  screenWidth: number;
+  screenHeight: number;
+  surfaceY: number;
+  sandY: number;
+  fishes: {
+    id: number;
+    speciesName: string;
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    mode: FishMode;
+    targetX: number;
+    targetY: number;
+  }[];
+  foods: { id: number; x: number; y: number }[];
+  bubbles: { id: number; x: number; y: number }[];
+  rippleCount: number;
+};
+
+export type CreateAquariumOptions = {
+  // テスト用: 自動tickerを止めて、step() を呼んだときだけ時間を進める
+  manualTick?: boolean;
+};
+
 // 水槽の外から操作するためのハンドル
 export type AquariumHandle = {
   applyFishSettings: (settings: AquariumSettings) => void;
+  // テスト用: 内部状態のスナップショットを返す
+  getDebugState: () => AquariumDebugState;
+  // テスト用: 指定秒数ぶんシミュレーションを進める(60fps相当の固定刻み)
+  step: (seconds: number) => void;
   destroy: () => void;
 };
 
@@ -99,7 +139,10 @@ const randomBetween = (min: number, max: number): number => min + Math.random() 
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
 
-export const createAquarium = async (container: HTMLElement): Promise<AquariumHandle> => {
+export const createAquarium = async (
+  container: HTMLElement,
+  options?: CreateAquariumOptions
+): Promise<AquariumHandle> => {
   const app = new Application();
   await app.init({
     resizeTo: container,
@@ -153,6 +196,8 @@ export const createAquarium = async (container: HTMLElement): Promise<AquariumHa
   let sandSprite: Sprite | null = null;
   let elapsed = 0;
   let bubbleTimer = 0;
+  // 魚・泡・餌に振る通し番号(テストでの個体追跡用)
+  let nextEntityId = 0;
 
   const surfaceY = (): number => app.screen.height * SURFACE_RATIO;
   const sandY = (): number => app.screen.height * SAND_RATIO;
@@ -303,6 +348,7 @@ export const createAquarium = async (container: HTMLElement): Promise<AquariumHa
     sprite.anchor.set(0.5);
     const initialVx = Math.random() < 0.5 ? -baseSpeed : baseSpeed;
     const fish: FishState = {
+      id: nextEntityId++,
       sprite,
       speciesName: entry.species.name,
       frames,
@@ -357,6 +403,7 @@ export const createAquarium = async (container: HTMLElement): Promise<AquariumHa
     sprite.scale.set(SCALE * randomBetween(0.5, 1));
     bubbleLayer.addChild(sprite);
     bubbles.push({
+      id: nextEntityId++,
       sprite,
       baseX: x,
       y,
@@ -373,6 +420,7 @@ export const createAquarium = async (container: HTMLElement): Promise<AquariumHa
       sprite.scale.set(SCALE * 0.75);
       foodLayer.addChild(sprite);
       foods.push({
+        id: nextEntityId++,
         sprite,
         x: clamp(x + randomBetween(-30, 30), 10, app.screen.width - 10),
         y: surfaceY() + randomBetween(4, 14),
@@ -613,12 +661,52 @@ export const createAquarium = async (container: HTMLElement): Promise<AquariumHa
 
   buildEnvironment();
   app.renderer.on('resize', onResize);
-  app.ticker.add((ticker) => {
-    tick(Math.min(ticker.deltaMS / 1000, 0.05));
+  if (options?.manualTick) {
+    // テスト時は実時間に依存させない(描画も step() 内で明示的に行う)
+    app.ticker.stop();
+  } else {
+    app.ticker.add((ticker) => {
+      tick(Math.min(ticker.deltaMS / 1000, 0.05));
+    });
+  }
+
+  const getDebugState = (): AquariumDebugState => ({
+    screenWidth: app.screen.width,
+    screenHeight: app.screen.height,
+    surfaceY: surfaceY(),
+    sandY: sandY(),
+    fishes: fishes.map((fish) => ({
+      id: fish.id,
+      speciesName: fish.speciesName,
+      x: fish.x,
+      y: fish.y,
+      vx: fish.vx,
+      vy: fish.vy,
+      mode: fish.mode,
+      targetX: fish.targetX,
+      targetY: fish.targetY
+    })),
+    foods: foods.map((food) => ({ id: food.id, x: food.x, y: food.y })),
+    bubbles: bubbles.map((bubble) => ({ id: bubble.id, x: bubble.sprite.x, y: bubble.y })),
+    rippleCount: ripples.length
   });
+
+  const step = (seconds: number): void => {
+    // 実フレームに近い粒度で刻むことで、tickerで動かした場合と挙動を揃える
+    const frame = 1 / 60;
+    let remaining = seconds;
+    while (remaining > 0) {
+      const dt = Math.min(frame, remaining);
+      tick(dt);
+      remaining -= dt;
+    }
+    app.render();
+  };
 
   return {
     applyFishSettings,
+    getDebugState,
+    step,
     destroy: () => {
       app.renderer.off('resize', onResize);
       app.destroy(true, { children: true, texture: true });

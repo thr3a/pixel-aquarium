@@ -8,6 +8,8 @@
     "build": "tsc && vite build",
     "lint": "biome check --write --unsafe ./src && npx tsc --noEmit",
     "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "serve": "python -m http.server -d dist"
   },
   "dependencies": {
@@ -32,11 +34,13 @@
     "@types/react-dom": "^19.2.3",
     "@vanilla-extract/vite-plugin": "^5.2.2",
     "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/browser-playwright": "^4.1.8",
     "pngjs": "^7.0.0",
     "postcss": "^8.5.9",
     "postcss-preset-mantine": "1.18.0",
     "postcss-simple-vars": "^7.0.1",
     "typescript": "^6.0.2",
-    "vite": "^8.0.8"
+    "vite": "^8.0.8",
+    "vitest": "^4.1.8"
   }
 }
