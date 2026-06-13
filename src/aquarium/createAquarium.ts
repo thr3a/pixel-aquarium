@@ -1,10 +1,10 @@
 import { Application, Container, type FederatedPointerEvent, Graphics, Sprite, type Texture } from 'pixi.js';
+import { type FishCatalogEntry, fishCatalog } from './fishCatalog';
 import {
   bubbleArt,
   bubbleSmallArt,
   coralArt,
   coralOrangeArt,
-  type FishSpecies,
   fishSpeciesList,
   foodArt,
   leafLeftArt,
@@ -14,6 +14,7 @@ import {
   rockArt
 } from './pixelArt';
 import { createPixelTexture, createSandTexture, makeTailFlapRows } from './pixelTexture';
+import type { AquariumSettings } from './settings';
 
 // ドット絵の拡大倍率(輪郭をはっきり保つ)
 const SCALE = 4;
@@ -24,6 +25,7 @@ const SAND_RATIO = 0.84;
 
 type FishState = {
   sprite: Sprite;
+  speciesName: string;
   frames: [Texture, Texture];
   frameIndex: number;
   frameTimer: number;
@@ -87,22 +89,17 @@ type RayState = {
   phase: number;
 };
 
-type FishPersonality = {
-  species: FishSpecies;
-  scale: number;
-  speed: number;
-  depthMin: number;
-  depthMax: number;
-  shyness: number;
-  appetite: number;
-  turnRate: number;
+// 水槽の外から操作するためのハンドル
+export type AquariumHandle = {
+  applyFishSettings: (settings: AquariumSettings) => void;
+  destroy: () => void;
 };
 
 const randomBetween = (min: number, max: number): number => min + Math.random() * (max - min);
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
 
-export const createAquarium = async (container: HTMLElement): Promise<() => void> => {
+export const createAquarium = async (container: HTMLElement): Promise<AquariumHandle> => {
   const app = new Application();
   await app.init({
     resizeTo: container,
@@ -190,15 +187,16 @@ export const createAquarium = async (container: HTMLElement): Promise<() => void
     const w = app.screen.width;
     const h = app.screen.height;
 
+    // 砂テクスチャはスプライト破棄前に解放する(破棄後は texture が null になるため)
+    if (sandSprite) {
+      sandSprite.texture.destroy(true);
+      sandSprite = null;
+    }
     for (const child of backgroundLayer.removeChildren()) child.destroy({ children: true });
     for (const child of decorLayer.removeChildren()) child.destroy({ children: true });
     for (const child of lightLayer.removeChildren()) child.destroy({ children: true });
     plants.length = 0;
     rays.length = 0;
-    if (sandSprite) {
-      sandSprite.texture.destroy(true);
-      sandSprite = null;
-    }
 
     // 水のグラデーション(レトロ感を残すため帯状に塗り分ける)
     const waterColors = [
@@ -283,169 +281,6 @@ export const createAquarium = async (container: HTMLElement): Promise<() => void
     }
   };
 
-  const personalities: FishPersonality[] = [
-    {
-      species: fishSpeciesList[0],
-      scale: 1.6,
-      speed: 70,
-      depthMin: 0.2,
-      depthMax: 0.55,
-      shyness: 1,
-      appetite: 280,
-      turnRate: 2.2
-    },
-    {
-      species: fishSpeciesList[0],
-      scale: 1.3,
-      speed: 85,
-      depthMin: 0.25,
-      depthMax: 0.6,
-      shyness: 1.3,
-      appetite: 320,
-      turnRate: 2.6
-    },
-    {
-      species: fishSpeciesList[1],
-      scale: 1.8,
-      speed: 55,
-      depthMin: 0.15,
-      depthMax: 0.5,
-      shyness: 0.8,
-      appetite: 300,
-      turnRate: 1.8
-    },
-    {
-      species: fishSpeciesList[2],
-      scale: 1.7,
-      speed: 40,
-      depthMin: 0.35,
-      depthMax: 0.75,
-      shyness: 0.6,
-      appetite: 260,
-      turnRate: 1.4
-    },
-    {
-      species: fishSpeciesList[3],
-      scale: 1.1,
-      speed: 110,
-      depthMin: 0.1,
-      depthMax: 0.45,
-      shyness: 1.6,
-      appetite: 360,
-      turnRate: 3.2
-    },
-    {
-      species: fishSpeciesList[3],
-      scale: 1,
-      speed: 120,
-      depthMin: 0.12,
-      depthMax: 0.4,
-      shyness: 1.6,
-      appetite: 360,
-      turnRate: 3.4
-    },
-    {
-      species: fishSpeciesList[4],
-      scale: 1.7,
-      speed: 45,
-      depthMin: 0.3,
-      depthMax: 0.7,
-      shyness: 0.7,
-      appetite: 240,
-      turnRate: 1.5
-    },
-    {
-      species: fishSpeciesList[5],
-      scale: 2,
-      speed: 60,
-      depthMin: 0.4,
-      depthMax: 0.8,
-      shyness: 0.9,
-      appetite: 300,
-      turnRate: 1.6
-    },
-    {
-      species: fishSpeciesList[6],
-      scale: 1.7,
-      speed: 50,
-      depthMin: 0.2,
-      depthMax: 0.6,
-      shyness: 0.9,
-      appetite: 280,
-      turnRate: 1.8
-    },
-    {
-      species: fishSpeciesList[7],
-      scale: 1.8,
-      speed: 45,
-      depthMin: 0.35,
-      depthMax: 0.75,
-      shyness: 0.6,
-      appetite: 250,
-      turnRate: 1.4
-    },
-    {
-      species: fishSpeciesList[8],
-      scale: 1.7,
-      speed: 55,
-      depthMin: 0.15,
-      depthMax: 0.55,
-      shyness: 1.1,
-      appetite: 290,
-      turnRate: 2
-    },
-    {
-      species: fishSpeciesList[9],
-      scale: 1.6,
-      speed: 50,
-      depthMin: 0.25,
-      depthMax: 0.65,
-      shyness: 0.8,
-      appetite: 270,
-      turnRate: 1.6
-    },
-    {
-      species: fishSpeciesList[10],
-      scale: 1.1,
-      speed: 95,
-      depthMin: 0.1,
-      depthMax: 0.4,
-      shyness: 1.4,
-      appetite: 340,
-      turnRate: 3
-    },
-    {
-      species: fishSpeciesList[11],
-      scale: 1.3,
-      speed: 80,
-      depthMin: 0.2,
-      depthMax: 0.5,
-      shyness: 1.3,
-      appetite: 320,
-      turnRate: 2.6
-    },
-    {
-      species: fishSpeciesList[12],
-      scale: 1.3,
-      speed: 100,
-      depthMin: 0.15,
-      depthMax: 0.45,
-      shyness: 1.5,
-      appetite: 350,
-      turnRate: 3
-    },
-    {
-      species: fishSpeciesList[13],
-      scale: 1.4,
-      speed: 65,
-      depthMin: 0.55,
-      depthMax: 0.85,
-      shyness: 1,
-      appetite: 300,
-      turnRate: 2
-    }
-  ];
-
   const waterTop = (): number => surfaceY() + 30;
   const waterBottom = (): number => sandY() - 20;
 
@@ -458,41 +293,60 @@ export const createAquarium = async (container: HTMLElement): Promise<() => void
     fish.retargetTimer = randomBetween(2.5, 7);
   };
 
-  const spawnFishes = (): void => {
-    for (const p of personalities) {
-      const frames = fishTextures.get(p.species.name);
-      if (!frames) continue;
-      const sprite = new Sprite(frames[0]);
-      sprite.anchor.set(0.5);
-      const initialVx = Math.random() < 0.5 ? -p.speed : p.speed;
-      const fish: FishState = {
-        sprite,
-        frames,
-        frameIndex: 0,
-        frameTimer: 0,
-        x: randomBetween(80, app.screen.width - 80),
-        y: clampFishY(randomBetween(depthToY(p.depthMin), depthToY(p.depthMax))),
-        vx: initialVx,
-        vy: 0,
-        baseSpeed: p.speed,
-        scale: p.scale,
-        pixelScale: p.species.pixelScale,
-        depthMin: p.depthMin,
-        depthMax: p.depthMax,
-        shyness: p.shyness,
-        appetite: p.appetite,
-        turnRate: p.turnRate,
-        mode: 'wander',
-        targetX: 0,
-        targetY: 0,
-        retargetTimer: 0,
-        fleeTimer: 0,
-        wigglePhase: Math.random() * Math.PI * 2,
-        facingRight: initialVx > 0
-      };
-      pickWanderTarget(fish);
-      fishLayer.addChild(sprite);
-      fishes.push(fish);
+  // 同じ種でも個体差が出るように、基本性格へ揺らぎを加えて1匹生成する
+  const spawnFish = (entry: FishCatalogEntry): void => {
+    const p = entry.personality;
+    const frames = fishTextures.get(entry.species.name);
+    if (!frames) return;
+    const baseSpeed = p.speed * randomBetween(0.9, 1.2);
+    const sprite = new Sprite(frames[0]);
+    sprite.anchor.set(0.5);
+    const initialVx = Math.random() < 0.5 ? -baseSpeed : baseSpeed;
+    const fish: FishState = {
+      sprite,
+      speciesName: entry.species.name,
+      frames,
+      frameIndex: 0,
+      frameTimer: 0,
+      x: randomBetween(80, app.screen.width - 80),
+      y: clampFishY(randomBetween(depthToY(p.depthMin), depthToY(p.depthMax))),
+      vx: initialVx,
+      vy: 0,
+      baseSpeed,
+      scale: p.scale * randomBetween(0.85, 1.1),
+      pixelScale: entry.species.pixelScale,
+      depthMin: p.depthMin,
+      depthMax: p.depthMax,
+      shyness: p.shyness * randomBetween(0.85, 1.15),
+      appetite: p.appetite,
+      turnRate: p.turnRate * randomBetween(0.9, 1.1),
+      mode: 'wander',
+      targetX: 0,
+      targetY: 0,
+      retargetTimer: 0,
+      fleeTimer: 0,
+      wigglePhase: Math.random() * Math.PI * 2,
+      facingRight: initialVx > 0
+    };
+    pickWanderTarget(fish);
+    fishLayer.addChild(sprite);
+    fishes.push(fish);
+  };
+
+  // 設定に合わせて魚を増減させる(残せる個体はそのまま泳がせて水槽の連続性を保つ)
+  const applyFishSettings = (settings: AquariumSettings): void => {
+    for (const entry of fishCatalog) {
+      const setting = settings.fish[entry.species.name];
+      const desired = setting?.enabled ? setting.count : 0;
+      const current = fishes.filter((fish) => fish.speciesName === entry.species.name);
+      for (let i = current.length - 1; i >= desired; i--) {
+        const fish = current[i];
+        fish.sprite.destroy();
+        fishes.splice(fishes.indexOf(fish), 1);
+      }
+      for (let i = current.length; i < desired; i++) {
+        spawnFish(entry);
+      }
     }
   };
 
@@ -758,14 +612,16 @@ export const createAquarium = async (container: HTMLElement): Promise<() => void
   };
 
   buildEnvironment();
-  spawnFishes();
   app.renderer.on('resize', onResize);
   app.ticker.add((ticker) => {
     tick(Math.min(ticker.deltaMS / 1000, 0.05));
   });
 
-  return () => {
-    app.renderer.off('resize', onResize);
-    app.destroy(true, { children: true, texture: true });
+  return {
+    applyFishSettings,
+    destroy: () => {
+      app.renderer.off('resize', onResize);
+      app.destroy(true, { children: true, texture: true });
+    }
   };
 };
