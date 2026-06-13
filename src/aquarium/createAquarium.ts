@@ -22,6 +22,8 @@ const SCALE = 4;
 const SURFACE_RATIO = 0.1;
 // 砂地の上端位置
 const SAND_RATIO = 0.84;
+// 餌を食べた瞬間の「パクッ」演出の継続時間(秒)
+const CHOMP_DURATION = 0.22;
 
 // 魚の行動モード(通常遊泳・逃避・餌への接近)
 export type FishMode = 'wander' | 'flee' | 'seek';
@@ -51,6 +53,8 @@ type FishState = {
   targetY: number;
   retargetTimer: number;
   fleeTimer: number;
+  // 餌を食べた瞬間の「パクッ」演出の残り時間(0なら演出なし)
+  chompTimer: number;
   wigglePhase: number;
   facingRight: boolean;
 };
@@ -114,6 +118,8 @@ export type AquariumDebugState = {
     mode: FishMode;
     targetX: number;
     targetY: number;
+    // 餌を食べた瞬間の「パクッ」演出中かどうか
+    chomping: boolean;
   }[];
   foods: { id: number; x: number; y: number }[];
   bubbles: { id: number; x: number; y: number }[];
@@ -371,6 +377,7 @@ export const createAquarium = async (
       targetY: 0,
       retargetTimer: 0,
       fleeTimer: 0,
+      chompTimer: 0,
       wigglePhase: Math.random() * Math.PI * 2,
       facingRight: initialVx > 0
     };
@@ -410,6 +417,25 @@ export const createAquarium = async (
       vy: randomBetween(30, 70),
       phase: Math.random() * Math.PI * 2
     });
+  };
+
+  // 餌を食べた瞬間に口元から立てる小さな泡(通常の泡より小さく速い)
+  const spawnEatBubbles = (x: number, y: number): void => {
+    const count = 2 + Math.floor(Math.random() * 2);
+    for (let i = 0; i < count; i++) {
+      const sprite = new Sprite(bubbleSmallTexture);
+      sprite.anchor.set(0.5);
+      sprite.scale.set(SCALE * randomBetween(0.3, 0.55));
+      bubbleLayer.addChild(sprite);
+      bubbles.push({
+        id: nextEntityId++,
+        sprite,
+        baseX: x + randomBetween(-6, 6),
+        y: y + randomBetween(-4, 4),
+        vy: randomBetween(45, 75),
+        phase: Math.random() * Math.PI * 2
+      });
+    }
   };
 
   const spawnFood = (x: number): void => {
@@ -490,6 +516,9 @@ export const createAquarium = async (
         fish.targetY = clampFishY(nearest.y);
         if (nearestDist < 16 * fish.scale + 8) {
           nearest.life = 0;
+          // 餌に到達した瞬間に「パクッ」と口を開け、口元から小さな泡を出す
+          fish.chompTimer = CHOMP_DURATION;
+          spawnEatBubbles(nearest.x, nearest.y);
           fish.mode = 'wander';
           pickWanderTarget(fish);
         }
@@ -538,8 +567,13 @@ export const createAquarium = async (
     if (fish.facingRight && fish.vx < -flipThreshold) fish.facingRight = false;
     if (!fish.facingRight && fish.vx > flipThreshold) fish.facingRight = true;
     const facingRight = fish.facingRight;
+    // 「パクッ」演出: 一瞬ふくらんで戻る squash & stretch(縦に伸び横に縮む)
+    fish.chompTimer = Math.max(0, fish.chompTimer - dt);
+    const chompPulse = fish.chompTimer > 0 ? Math.sin((1 - fish.chompTimer / CHOMP_DURATION) * Math.PI) : 0;
+    const chompX = 1 - chompPulse * 0.12;
+    const chompY = 1 + chompPulse * 0.2;
     const spriteScale = SCALE * fish.scale * fish.pixelScale;
-    fish.sprite.scale.set(facingRight ? -spriteScale : spriteScale, spriteScale);
+    fish.sprite.scale.set(facingRight ? -spriteScale * chompX : spriteScale * chompX, spriteScale * chompY);
     fish.sprite.x = fish.x;
     fish.sprite.y = fish.y + Math.sin(fish.wigglePhase) * 2;
     const tilt = clamp(Math.atan2(fish.vy, Math.abs(fish.vx) + 20) * 0.6, -0.45, 0.45);
@@ -684,7 +718,8 @@ export const createAquarium = async (
       vy: fish.vy,
       mode: fish.mode,
       targetX: fish.targetX,
-      targetY: fish.targetY
+      targetY: fish.targetY,
+      chomping: fish.chompTimer > 0
     })),
     foods: foods.map((food) => ({ id: food.id, x: food.x, y: food.y })),
     bubbles: bubbles.map((bubble) => ({ id: bubble.id, x: bubble.sprite.x, y: bubble.y })),
