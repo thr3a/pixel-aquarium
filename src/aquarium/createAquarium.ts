@@ -25,8 +25,8 @@ const SAND_RATIO = 0.84;
 // 餌を食べた瞬間の「パクッ」演出の継続時間(秒)
 const CHOMP_DURATION = 0.22;
 
-// 魚の行動モード(通常遊泳・逃避・餌への接近)
-export type FishMode = 'wander' | 'flee' | 'seek';
+// 魚の行動モード(通常遊泳・逃避・餌への接近・砂底つつき)
+export type FishMode = 'wander' | 'flee' | 'seek' | 'peck';
 
 type FishState = {
   // テストでスナップショット間の個体追跡に使う通し番号
@@ -57,6 +57,9 @@ type FishState = {
   chompTimer: number;
   wigglePhase: number;
   facingRight: boolean;
+  // 砂底つつき: 残りつつき回数と1回のつつきのタイマー
+  peckCount: number;
+  peckTimer: number;
 };
 
 type BubbleState = {
@@ -392,7 +395,9 @@ export const createAquarium = async (
       fleeTimer: 0,
       chompTimer: 0,
       wigglePhase: Math.random() * Math.PI * 2,
-      facingRight: initialVx > 0
+      facingRight: initialVx > 0,
+      peckCount: 0,
+      peckTimer: 0
     };
     pickWanderTarget(fish);
     fishLayer.addChild(sprite);
@@ -504,6 +509,13 @@ export const createAquarium = async (
   app.stage.hitArea = app.screen;
   app.stage.on('pointerdown', onPointerDown);
 
+  // 1回のつつき動作の時間(秒)
+  const PECK_INTERVAL = 0.35;
+  // 砂底から何px以内ならpeck候補とするか(遊泳下限=sandY-20 を余裕で含む値)
+  const PECK_ZONE = 200;
+  // wander中に砂底付近にいるとき毎秒この確率でpeckを開始する
+  const PECK_CHANCE_PER_SEC = 0.02;
+
   const updateFish = (fish: FishState, dt: number): void => {
     if (fish.mode === 'flee') {
       fish.fleeTimer -= dt;
@@ -513,8 +525,23 @@ export const createAquarium = async (
         fish.mode = 'wander';
         pickWanderTarget(fish);
       }
+    } else if (fish.mode === 'peck') {
+      // 砂底に向かって移動中
+      const distToTarget = Math.hypot(fish.targetX - fish.x, fish.targetY - fish.y);
+      if (fish.peckCount > 0 && distToTarget < 12) {
+        // 砂底に到達 → つつき動作
+        fish.peckTimer -= dt;
+        if (fish.peckTimer <= 0) {
+          fish.peckCount--;
+          fish.peckTimer = PECK_INTERVAL;
+        }
+      }
+      if (fish.peckCount <= 0) {
+        fish.mode = 'wander';
+        pickWanderTarget(fish);
+      }
     } else {
-      // 近くの餌を探す(逃走中は無視)
+      // 近くの餌を探す(逃走中・peck中は無視)
       let nearest: FoodState | null = null;
       let nearestDist = fish.appetite;
       for (const food of foods) {
@@ -545,9 +572,19 @@ export const createAquarium = async (
       fish.retargetTimer -= dt;
       const arrived = Math.hypot(fish.targetX - fish.x, fish.targetY - fish.y) < 30;
       if (fish.retargetTimer <= 0 || arrived) pickWanderTarget(fish);
+
+      // 砂底付近にいるとき低確率でpeckモードへ遷移
+      const distToSand = sandY() - fish.y;
+      if (distToSand < PECK_ZONE && Math.random() < PECK_CHANCE_PER_SEC * dt) {
+        fish.mode = 'peck';
+        fish.targetX = fish.x + randomBetween(-40, 40);
+        fish.targetY = sandY() - 10;
+        fish.peckCount = 1 + Math.floor(Math.random() * 3);
+        fish.peckTimer = PECK_INTERVAL;
+      }
     }
 
-    const speedMul = fish.mode === 'flee' ? 2.4 : fish.mode === 'seek' ? 1.5 : 1;
+    const speedMul = fish.mode === 'flee' ? 2.4 : fish.mode === 'seek' ? 1.5 : fish.mode === 'peck' ? 0.8 : 1;
     const dx = fish.targetX - fish.x;
     const dy = fish.targetY - fish.y;
     const dist = Math.max(Math.hypot(dx, dy), 1);
@@ -563,7 +600,9 @@ export const createAquarium = async (
     fish.x += fish.vx * dt;
     fish.y += fish.vy * dt;
     fish.x = clamp(fish.x, 30, app.screen.width - 30);
-    fish.y = clampFishY(fish.y);
+    // peck中は砂底により近づける
+    const yBottom = fish.mode === 'peck' ? sandY() - 10 : sandY() - 20;
+    fish.y = clamp(fish.y, surfaceY() + 30, yBottom);
 
     // 尾びれのパタパタ(速いほど速く動かす)
     const flapSpeed = 3 + (Math.hypot(fish.vx, fish.vy) / fish.baseSpeed) * 4;
@@ -589,7 +628,16 @@ export const createAquarium = async (
     fish.sprite.scale.set(facingRight ? -spriteScale * chompX : spriteScale * chompX, spriteScale * chompY);
     fish.sprite.x = fish.x;
     fish.sprite.y = fish.y + Math.sin(fish.wigglePhase) * 2;
-    const tilt = clamp(Math.atan2(fish.vy, Math.abs(fish.vx) + 20) * 0.6, -0.45, 0.45);
+    let tilt = clamp(Math.atan2(fish.vy, Math.abs(fish.vx) + 20) * 0.6, -0.45, 0.45);
+    // peck中のつつき演出: 砂底に到達したら頭を下げてコツコツとつつく
+    if (fish.mode === 'peck' && fish.peckCount > 0) {
+      const distToTarget = Math.hypot(fish.targetX - fish.x, fish.targetY - fish.y);
+      if (distToTarget < 12) {
+        const peckProgress = fish.peckTimer / PECK_INTERVAL;
+        const peckAngle = Math.sin(peckProgress * Math.PI) * 0.5;
+        tilt = 0.4 + peckAngle;
+      }
+    }
     // 体の傾きも一瞬で変えず滑らかに追従させる
     const targetRotation = facingRight ? tilt : -tilt;
     fish.sprite.rotation += (targetRotation - fish.sprite.rotation) * clamp(dt * 8, 0, 1);
