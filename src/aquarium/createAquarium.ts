@@ -134,6 +134,7 @@ export type CreateAquariumOptions = {
 // 水槽の外から操作するためのハンドル
 export type AquariumHandle = {
   applyFishSettings: (settings: AquariumSettings) => void;
+  setDebug: (enabled: boolean) => void;
   // テスト用: 内部状態のスナップショットを返す
   getDebugState: () => AquariumDebugState;
   // テスト用: 指定秒数ぶんシミュレーションを進める(60fps相当の固定刻み)
@@ -166,7 +167,19 @@ export const createAquarium = async (
   const bubbleLayer = new Container();
   const effectLayer = new Container();
   const surfaceG = new Graphics();
-  app.stage.addChild(backgroundLayer, lightLayer, decorLayer, foodLayer, fishLayer, bubbleLayer, effectLayer, surfaceG);
+  const debugG = new Graphics();
+  let debugMode = false;
+  app.stage.addChild(
+    backgroundLayer,
+    lightLayer,
+    decorLayer,
+    foodLayer,
+    fishLayer,
+    bubbleLayer,
+    effectLayer,
+    surfaceG,
+    debugG
+  );
 
   // 共有テクスチャを一度だけ生成
   const bubbleTexture = createPixelTexture(bubbleArt.rows, bubbleArt.palette);
@@ -681,6 +694,12 @@ export const createAquarium = async (
     }
 
     drawSurface();
+
+    debugG.clear();
+    if (debugMode) {
+      debugG.rect(0, sandY() - PECK_ZONE, app.screen.width, PECK_ZONE).fill({ color: 0xff0000, alpha: 0.12 });
+      debugG.rect(0, sandY() - PECK_ZONE, app.screen.width, 2).fill({ color: 0xff0000, alpha: 0.8 });
+    }
   };
 
   const onResize = (): void => {
@@ -738,8 +757,14 @@ export const createAquarium = async (
     app.render();
   };
 
+  const setDebug = (enabled: boolean): void => {
+    debugMode = enabled;
+    if (!debugMode) debugG.clear();
+  };
+
   return {
     applyFishSettings,
+    setDebug,
     getDebugState,
     step,
     destroy: () => {

@@ -31,6 +31,7 @@ export default function Home() {
       handle = created;
       aquariumRef.current = created;
       created.applyFishSettings(settingsRef.current);
+      created.setDebug(settingsRef.current.debug);
     });
 
     return () => {
@@ -44,6 +45,7 @@ export default function Home() {
   useEffect(() => {
     settingsRef.current = settings;
     aquariumRef.current?.applyFishSettings(settings);
+    aquariumRef.current?.setDebug(settings.debug);
   }, [settings]);
 
   return (

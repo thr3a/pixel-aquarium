@@ -5,7 +5,8 @@ import { mountAquarium } from './helpers';
 
 // 魚0匹の設定(全種無効)
 const noFishSettings: AquariumSettings = {
-  fish: Object.fromEntries(fishCatalog.map((entry) => [entry.species.name, { enabled: false, count: 1 }]))
+  fish: Object.fromEntries(fishCatalog.map((entry) => [entry.species.name, { enabled: false, count: 1 }])),
+  debug: false
 };
 
 describe('餌やり', () => {

@@ -8,6 +8,7 @@ export type FishSetting = {
 
 export type AquariumSettings = {
   fish: Record<string, FishSetting>;
+  debug: boolean;
 };
 
 export const FISH_COUNT_MIN = 1;
@@ -22,7 +23,8 @@ const defaultCounts: Record<string, number> = {
 export const defaultAquariumSettings: AquariumSettings = {
   fish: Object.fromEntries(
     fishCatalog.map((entry) => [entry.species.name, { enabled: true, count: defaultCounts[entry.species.name] ?? 1 }])
-  )
+  ),
+  debug: false
 };
 
 // localStorage から復元した値を検証し、欠けている魚種の補完と数の範囲チェックを行う
@@ -38,5 +40,5 @@ export const normalizeAquariumSettings = (stored: AquariumSettings): AquariumSet
       count: Math.min(FISH_COUNT_MAX, Math.max(FISH_COUNT_MIN, count))
     };
   }
-  return { fish };
+  return { fish, debug: typeof stored.debug === 'boolean' ? stored.debug : false };
 };

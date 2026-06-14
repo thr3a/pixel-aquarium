@@ -52,7 +52,8 @@ describe('魚の設定', () => {
   it('全14種を2匹ずつ設定すると28匹生成され、各種ちょうど2匹ずつになる', async () => {
     const { handle, cleanup } = await mountAquarium();
     const allTwoSettings: AquariumSettings = {
-      fish: Object.fromEntries(fishCatalog.map((entry) => [entry.species.name, { enabled: true, count: 2 }]))
+      fish: Object.fromEntries(fishCatalog.map((entry) => [entry.species.name, { enabled: true, count: 2 }])),
+      debug: false
     };
     handle.applyFishSettings(allTwoSettings);
 
@@ -77,7 +78,8 @@ describe('魚の設定', () => {
 
     // 全種 count:1 に変更(clownfish と neonTetra が1匹ずつ減る)
     const allOneSettings: AquariumSettings = {
-      fish: Object.fromEntries(fishCatalog.map((entry) => [entry.species.name, { enabled: true, count: 1 }]))
+      fish: Object.fromEntries(fishCatalog.map((entry) => [entry.species.name, { enabled: true, count: 1 }])),
+      debug: false
     };
     handle.applyFishSettings(allOneSettings);
     const snapshot2 = handle.getDebugState();
@@ -92,7 +94,8 @@ describe('魚の設定', () => {
     const noClownfish: AquariumSettings = {
       fish: Object.fromEntries(
         fishCatalog.map((entry) => [entry.species.name, { enabled: entry.species.name !== 'clownfish', count: 1 }])
-      )
+      ),
+      debug: false
     };
     handle.applyFishSettings(noClownfish);
     const snapshot3 = handle.getDebugState();

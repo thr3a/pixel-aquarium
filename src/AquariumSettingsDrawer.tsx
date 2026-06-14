@@ -121,6 +121,22 @@ export const AquariumSettingsDrawer = ({ settings, onChange }: AquariumSettingsD
               </Group>
             );
           })}
+
+          <Group
+            justify='space-between'
+            wrap='nowrap'
+            mt='md'
+            pt='md'
+            style={{ borderTop: '1px solid rgba(223, 242, 252, 0.15)' }}
+          >
+            <Text size='sm'>デバッグモード</Text>
+            <Switch
+              checked={settings.debug}
+              onChange={(event) => onChange({ ...settings, debug: event.currentTarget.checked })}
+              size='sm'
+              color='cyan'
+            />
+          </Group>
         </Stack>
       </Drawer>
     </>
